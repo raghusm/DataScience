@@ -1,0 +1,238 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Fri Jan  3 00:39:25 2020
+
+@author: Raghavendra
+"""
+
+#%%
+
+#KERAS
+from keras.models import Sequential
+from keras.layers.core import Dense, Dropout, Activation, Flatten
+from keras.layers.convolutional import Convolution2D, MaxPooling2D ,Conv2D
+from keras.optimizers import SGD,RMSprop,adam
+from keras.utils import np_utils
+import numpy
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib
+import os
+ #import theano
+from PIL import Image
+from numpy import size
+# SKLEARN
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
+ 
+
+from PIL import Image
+import os
+
+#%%
+ # main data processing as per the requirement of CNN for SMILE : (0)
+#for f in os.listdir('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/smile/'):
+#   if f.endswith('.jpg'):
+#       
+#        i=Image.open('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/smile/'+'\\' + f).convert('L')
+#        #i.thumbnail(siz)
+#        i.save('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/smileG/' +'\\'+ f)
+#
+## main data processing as per the requirement of CNN for CRY : (1)
+#for f in os.listdir('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/cry/'):
+#   if f.endswith('.jpg'):
+#       
+#        i=Image.open('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/cry/'+'\\' + f).convert('L')
+#        #i.thumbnail(siz)
+#        i.save('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/cryG/' +'\\'+ f)
+#
+
+
+#%%
+ 
+# to concvert to  array and resize to 512 X 512 pixels for SMILE : (0)
+from skimage.transform import resize     
+imlist = os.listdir('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/smile/')
+immatrix0=[]
+for lsimg in imlist:
+    i=Image.open('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/smileG/'+'\\' + lsimg).convert('L')
+    img=np.array(i)
+    img512 = resize(img, (512, 512), anti_aliasing=True)
+    #print(lsimg,img512)
+    immatrix0.append(img512)
+
+
+# to concvert to  array and resize to 512 X 512 pixels for CRY : (1)
+from skimage.transform import resize     
+imlist = os.listdir('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/cry/')
+immatrix1=[]
+for lsimg in imlist:
+    i=Image.open('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/cryG/'+'\\' + lsimg).convert('L')
+    img=np.array(i)
+    img512 = resize(img, (512, 512), anti_aliasing=True)
+    #print(lsimg,img512)
+    immatrix1.append(img512)
+    
+#%%
+    
+    
+#label for SMILE : (0)
+import numpy as np
+listings=os.listdir('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/smileG/')
+numsamples=size(listings)
+     
+label0=np.ones((numsamples), dtype=int)
+label0[0:784]=0
+
+
+#label for CRY : (1)
+import numpy as np
+listings=os.listdir('D:/Users/703208816/Pictures/Pics_For_Cnn/smile_cry_class/cryG/')
+numsamples=size(listings)
+     
+label1=np.ones((numsamples), dtype=int)
+label1[0:784]=1
+
+#label=[0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1]
+
+# looks like results are fine
+a=immatrix0+immatrix1
+
+l0=list(label0)
+l1=list(label1)
+
+b=l0+l1
+
+data1,label1 = shuffle(a,b, random_state=5)
+train_data=[data1, label1]
+
+
+
+#%%
+
+batch_size = 1
+num_classes = 2
+epochs = 50
+
+
+(X, y) = (train_data[0][0:300],train_data[1][0:300])
+ 
+from sklearn.model_selection import train_test_split
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+
+img_rows,img_cols=512,512
+ 
+X_train = np.array(X_train)
+X_test= np.array(X_test)
+ 
+X_train = X_train.reshape(X_train.shape[0], img_rows, img_cols, 1)
+X_test = X_test.reshape(X_test.shape[0], img_rows, img_cols, 1)
+input_shape = (img_rows, img_cols, 1)
+
+
+X_train = X_train.astype('float32')
+X_test = X_test.astype('float32')
+
+
+print('X_train shape:', X_train.shape)
+print(X_train.shape[0], 'train samples')
+print(X_test.shape[0], 'test samples')
+    
+
+from keras.utils import np_utils
+# convert class vectors to binary class matrices
+Y_train = np_utils.to_categorical(y_train, num_classes)
+Y_test = np_utils.to_categorical(y_test, num_classes)
+
+
+#%%
+model = Sequential()
+
+model.add(Conv2D(32, kernel_size=(4, 4),
+                 activation='relu',
+                 input_shape=input_shape))
+
+model.add(Conv2D(64, (4, 4), activation='tanh',input_shape=input_shape))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+
+model.add(Conv2D(64, (3, 3), activation='tanh'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+
+model.add(Conv2D(64, kernel_size=(3, 3),
+                 activation='relu',
+                 input_shape=input_shape))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+
+model.add(Conv2D(64, (3, 3), activation='tanh'))
+model.add(MaxPooling2D(pool_size=(2, 2)))
+
+
+
+model.add(Dropout(0.25))
+model.add(Flatten())
+model.add(Dense(25, activation='tanh'))
+model.add(Dropout(0.5))
+
+model.add(Dense(num_classes, activation='sigmoid'))
+model.summary()
+
+model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
+ 
+#%%
+model.fit(X_train, Y_train,
+          batch_size=batch_size,
+          epochs=epochs,
+          verbose=1,
+          validation_data=(X_test, Y_test))
+
+
+model.fit(X_train, Y_train,
+          batch_size=batch_size,
+          epochs=epochs,
+          verbose=1)
+
+
+#%%
+score = model.evaluate(X_test, Y_test, verbose=0)
+
+print('Test loss:', score[0])
+print('Test accuracy:', score[1])
+
+
+
+#%%
+ #EXECUTE WITH NEW IMAGE
+ 
+cry0, smile1='Tom Hanks','Brad Pitt'
+       
+i=Image.open('D:/Users/703208816/Pictures/Pics_For_Cnn/cry/new1.jpg').convert('L')
+i.save('D:/Users/703208816/Pictures/Pics_For_Cnn/cry/new1g.jpg')
+
+
+# create matrix to store all flattened images
+immatrix_new=[]
+img_new=np.array(i)
+img_new=resize(img_new,(512,512),anti_aliasing=True)
+immatrix_new.append(img_new)
+
+     
+X_newtrain = np.array(immatrix_new)
+
+X_newtrain = X_newtrain.reshape(X_newtrain.shape[0], img_rows, img_cols,1)
+
+X_newtrain = X_newtrain.astype('float32')
+
+
+Y_pred_new = model.predict(X_newtrain)
+#print(Y_pred_new)
+y_pred_new = np.argmax(Y_pred_new, axis=1)
+#print(y_pred_new)
+
+if y_pred_new==1:
+    print(smile1)
+else:
+    print(cry0)
